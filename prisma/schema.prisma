@@ -1,0 +1,132 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Keyword {
+  id          String   @id @default(cuid())
+  keyword     String   @unique
+  searchVolume Int     @default(0)
+  difficulty  Int      @default(0)
+  intent      String   @default("Informational")
+  pillarId    String?
+  pillar      Pillar?  @relation(fields: [pillarId], references: [id])
+  source      String   @default("claude_discovery")
+  discovered  DateTime @default(now())
+  updated     DateTime @updatedAt
+  topics      Topic[]
+  @@index([pillarId])
+}
+
+model Pillar {
+  id          String   @id @default(cuid())
+  title       String   @unique
+  description String?
+  authority   Int      @default(0)
+  keywords    Keyword[]
+  topics      Topic[]
+  articles    Article[]
+  created     DateTime @default(now())
+  updated     DateTime @updatedAt
+}
+
+model Topic {
+  id          String   @id @default(cuid())
+  keywordId   String
+  keyword     Keyword  @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+  pillarId    String?
+  pillar      Pillar?  @relation(fields: [pillarId], references: [id])
+  stage       String   @default("TOFU")
+  title       String
+  outline     String
+  metaDesc    String?
+  status      String   @default("queued")
+  errorMsg    String?
+  tokens      Int      @default(0)
+  articles    Article[]
+  created     DateTime @default(now())
+  updated     DateTime @updatedAt
+  @@index([keywordId])
+  @@index([pillarId])
+}
+
+model Article {
+  id          String   @id @default(cuid())
+  topicId     String?
+  topic       Topic?   @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  pillarId    String
+  pillar      Pillar   @relation(fields: [pillarId], references: [id], onDelete: Cascade)
+  title       String
+  slug        String
+  content     String
+  excerpt     String?
+  stage       String   @default("TOFU")
+  wordCount   Int      @default(0)
+  metaDesc    String?
+  focusKeyword String?
+  status      String   @default("not_started")
+  errorMsg    String?
+  tokens      Int      @default(0)
+  published   Boolean  @default(false)
+  publishedAt DateTime?
+  links       Link[]   @relation("sourceArticle")
+  incomingLinks Link[] @relation("targetArticle")
+  competitors Competitor[]
+  created     DateTime @default(now())
+  updated     DateTime @updatedAt
+  @@unique([pillarId, slug])
+  @@index([pillarId])
+  @@index([topicId])
+}
+
+model Competitor {
+  id          String   @id @default(cuid())
+  articleId   String
+  article     Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  url         String
+  title       String
+  rank        Int      @default(0)
+  domain      String
+  authority   Int      @default(0)
+  backlinks   Int      @default(0)
+  traffic     Int      @default(0)
+  strengths   String
+  weaknesses  String
+  beats       String
+  analyzed    DateTime @default(now())
+  @@index([articleId])
+}
+
+model Link {
+  id          String   @id @default(cuid())
+  sourceId    String
+  source      Article  @relation("sourceArticle", fields: [sourceId], references: [id], onDelete: Cascade)
+  targetId    String
+  target      Article  @relation("targetArticle", fields: [targetId], references: [id], onDelete: Cascade)
+  anchorText  String   @default("Read more")
+  type        String   @default("internal")
+  created     DateTime @default(now())
+  @@unique([sourceId, targetId])
+  @@index([sourceId])
+  @@index([targetId])
+}
+
+model ProjectSettings {
+  id          String   @id @default("default")
+  targetKeywords Int   @default(25)
+  targetArticles  Int  @default(75)
+  keywordsDiscovered Int @default(0)
+  keywordsAssigned   Int @default(0)
+  topicsGenerated    Int @default(0)
+  articlesGenerated  Int @default(0)
+  preferredTimeline String @default("sequential")
+  startDate         DateTime @default(now())
+  projectedEnd      DateTime?
+  totalTokens       Int @default(0)
+  totalCost         Float @default(0.0)
+  updated     DateTime @updatedAt
+}

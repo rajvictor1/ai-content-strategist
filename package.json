@@ -1,0 +1,33 @@
+{
+  "name": "ai-content-strategist",
+  "version": "0.1.0",
+  "description": "AI-powered Content Strategy Agent using Claude API and web search",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "seed": "node scripts/seed.js",
+    "migrate": "prisma migrate dev",
+    "studio": "prisma studio"
+  },
+  "keywords": [
+    "content-strategy",
+    "seo",
+    "claude-ai",
+    "content-generation"
+  ],
+  "author": "rajesh@example.com",
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.24.3",
+    "@prisma/client": "^5.20.0",
+    "express": "^4.21.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "axios": "^1.7.7"
+  },
+  "devDependencies": {
+    "prisma": "^5.20.0"
+  }
+}
