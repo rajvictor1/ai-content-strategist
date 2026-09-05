@@ -3,7 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 export async function discoverKeywords(client, topic, count = 25) {
   const prompt = `You are an SEO expert. Generate ${count} keywords for "${topic}". Return JSON array with: keyword, volume, difficulty, intent, description.`;
   const response = await client.messages.create({
-    model: 'claude-opus-4-1-20250805',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 2000,
     messages: [{ role: 'user', content: prompt }]
   });
@@ -24,7 +24,7 @@ export async function createPillarStructure(client, keywords, pillarCount = 11) 
   const keywordList = keywords.map(k => k.keyword).join(', ');
   const prompt = `Organize into ${pillarCount} pillars: ${keywordList}. Return JSON array with: name, description, authority, keywords.`;
   const response = await client.messages.create({
-    model: 'claude-opus-4-1-20250805',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 2000,
     messages: [{ role: 'user', content: prompt }]
   });
@@ -44,7 +44,7 @@ export async function createPillarStructure(client, keywords, pillarCount = 11) 
 export async function generateTopicsForKeyword(client, keyword, pillarTitle) {
   const prompt = `Create 3 outlines (TOFU, MOFU, BOFU) for "${keyword}". Return JSON.`;
   const response = await client.messages.create({
-    model: 'claude-opus-4-1-20250805',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 1500,
     messages: [{ role: 'user', content: prompt }]
   });
@@ -64,7 +64,7 @@ export async function generateTopicsForKeyword(client, keyword, pillarTitle) {
 export async function generateArticleContent(client, topic, keyword, pillarTitle) {
   const prompt = `Write 1500-2000 word article on "${topic}". Use markdown.`;
   const response = await client.messages.create({
-    model: 'claude-opus-4-1-20250805',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 3000,
     messages: [{ role: 'user', content: prompt }]
   });
@@ -79,7 +79,7 @@ export async function generateArticleContent(client, topic, keyword, pillarTitle
 export async function analyzeCompetitor(client, keyword, url, title) {
   const prompt = `Analyze "${title}". Return JSON with: strengths, weaknesses, beats, confidenceScore.`;
   const response = await client.messages.create({
-    model: 'claude-opus-4-1-20250805',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 1000,
     messages: [{ role: 'user', content: prompt }]
   });

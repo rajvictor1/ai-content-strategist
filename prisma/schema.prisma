@@ -4,7 +4,27 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["darwin-arm64"]
+}
+
+model Project {
+  id          String   @id @default("default")
+  name        String   @default("AI Content Strategy")
+  description String?
+  status      String   @default("active")
+  targetKeywords Int   @default(25)
+  targetArticles  Int  @default(75)
+  keywordsDiscovered Int @default(0)
+  keywordsAssigned   Int @default(0)
+  topicsGenerated    Int @default(0)
+  articlesGenerated  Int @default(0)
+  preferredTimeline String @default("sequential")
+  startDate         DateTime @default(now())
+  projectedEnd      DateTime?
+  totalTokens       Int @default(0)
+  totalCost         Float @default(0.0)
+  updated     DateTime @updatedAt
 }
 
 model Keyword {
@@ -113,20 +133,4 @@ model Link {
   @@unique([sourceId, targetId])
   @@index([sourceId])
   @@index([targetId])
-}
-
-model ProjectSettings {
-  id          String   @id @default("default")
-  targetKeywords Int   @default(25)
-  targetArticles  Int  @default(75)
-  keywordsDiscovered Int @default(0)
-  keywordsAssigned   Int @default(0)
-  topicsGenerated    Int @default(0)
-  articlesGenerated  Int @default(0)
-  preferredTimeline String @default("sequential")
-  startDate         DateTime @default(now())
-  projectedEnd      DateTime?
-  totalTokens       Int @default(0)
-  totalCost         Float @default(0.0)
-  updated     DateTime @updatedAt
 }
