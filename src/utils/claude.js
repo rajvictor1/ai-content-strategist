@@ -95,3 +95,24 @@ export async function analyzeCompetitor(client, keyword, url, title) {
     tokensUsed: response.usage.input_tokens + response.usage.output_tokens
   };
 }
+
+export async function generateInterlinkingStrategy(client, articles) {
+  const articleList = articles.map(a => `${a.title} (${a.slug})`).join('\n');
+  const prompt = `Suggest internal links between these articles:\n${articleList}\nReturn JSON array with: source, target, anchorText, reason. Suggest max 3 links per article.`;
+  const response = await client.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 2000,
+    messages: [{ role: 'user', content: prompt }]
+  });
+  let links = [];
+  try {
+    links = JSON.parse(response.content[0].text);
+  } catch (e) {
+    const m = response.content[0].text.match(/\[[\s\S]*\]/);
+    if (m) links = JSON.parse(m[0]);
+  }
+  return {
+    links,
+    tokensUsed: response.usage.input_tokens + response.usage.output_tokens
+  };
+}

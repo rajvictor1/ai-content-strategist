@@ -11,7 +11,7 @@ router.post('/search', async (req, res, next) => {
     const savedKeywords = await req.prisma.keyword.createMany({
       data: keywords.map(k => ({ keyword: k.keyword, searchVolume: k.volume, difficulty: k.difficulty, intent: k.intent, description: k.description || '' }))
     });
-    await req.prisma.projectSettings.update({ where: { id: 1 }, data: { phase1TokensUsed: { increment: tokensUsed } } });
+    await req.prisma.project.update({ where: { id: 'default' }, data: { totalTokens: { increment: tokensUsed }, keywordsDiscovered: savedKeywords.count } });
     res.json({ success: true, keywordsCreated: savedKeywords.count, keywords, tokensUsed, estimatedCost: (tokensUsed * 0.003) / 1000 });
   } catch (error) { next(error); }
 });
@@ -45,13 +45,13 @@ router.post('/organize-pillars', async (req, res, next) => {
     const { pillars, tokensUsed } = await createPillarStructure(req.claude, keywords, pillarCount);
     const savedPillars = [];
     for (const pillar of pillars) {
-      const saved = await req.prisma.pillar.create({ data: { name: pillar.name, description: pillar.description, authority: pillar.authority || 0 } });
+      const saved = await req.prisma.pillar.create({ data: { title: pillar.name, description: pillar.description, authority: pillar.authority || 0 } });
       if (pillar.keywords && pillar.keywords.length > 0) {
         await req.prisma.keyword.updateMany({ where: { keyword: { in: pillar.keywords } }, data: { pillarId: saved.id } });
       }
       savedPillars.push(saved);
     }
-    await req.prisma.projectSettings.update({ where: { id: 1 }, data: { phase2TokensUsed: { increment: tokensUsed } } });
+    await req.prisma.project.update({ where: { id: 'default' }, data: { totalTokens: { increment: tokensUsed }, keywordsAssigned: { increment: pillars.reduce((sum, p) => sum + (p.keywords?.length || 0), 0) } } });
     res.json({ success: true, pillarsCreated: savedPillars.length, pillars: savedPillars, tokensUsed, estimatedCost: (tokensUsed * 0.003) / 1000 });
   } catch (error) { next(error); }
 });

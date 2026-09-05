@@ -7,6 +7,7 @@ import pillarRoutes from './routes/pillars.js';
 import topicRoutes from './routes/topics.js';
 import articleRoutes from './routes/articles.js';
 import competitorRoutes from './routes/competitors.js';
+import linkRoutes from './routes/links.js';
 import projectRoutes from './routes/project.js';
 
 const app = express();
@@ -28,12 +29,13 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Routes
-app.use('/api/keywords', keywordRoutes);
-app.use('/api/pillars', pillarRoutes);
-app.use('/api/topics', topicRoutes);
-app.use('/api/articles', articleRoutes);
-app.use('/api/competitors', competitorRoutes);
+// Routes - All 6 Phases
+app.use('/api/keywords', keywordRoutes);      // Phase 1: Keyword Discovery
+app.use('/api/pillars', pillarRoutes);        // Phase 2: Pillar Mapping
+app.use('/api/topics', topicRoutes);          // Phase 3: Topic Generation
+app.use('/api/articles', articleRoutes);      // Phase 4: Article Generation
+app.use('/api/competitors', competitorRoutes);// Phase 5: Competitor Analysis
+app.use('/api/links', linkRoutes);            // Phase 6: Interlinking Strategy
 app.use('/api/project', projectRoutes);
 
 // 404 handler
@@ -76,6 +78,7 @@ const startServer = async () => {
     app.listen(PORT, () => {
       console.log(`✓ Server running on http://localhost:${PORT}`);
       console.log(`✓ NODE_ENV: ${process.env.NODE_ENV}`);
+      console.log('✓ All 6 phases active: Keyword Discovery → Pillar Mapping → Topic Generation → Article Generation → Competitor Analysis → Interlinking');
     });
   } catch (error) {
     console.error('Failed to start server:', error);

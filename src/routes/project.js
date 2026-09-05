@@ -1,35 +1,47 @@
 import express from 'express';
 const router = express.Router();
 
-router.get('/settings', async (req, res) => {
-  const settings = await req.prisma.projectSettings.findUnique({ where: { id: 1 } });
-  res.json({ success: true, settings });
+router.get('/settings', async (req, res, next) => {
+  try {
+    const project = await req.prisma.project.findUnique({ where: { id: 'default' } });
+    res.json({ success: true, settings: project });
+  } catch (error) { next(error); }
 });
 
-router.put('/settings', async (req, res) => {
-  const settings = await req.prisma.projectSettings.update({
-    where: { id: 1 },
-    data: req.body
-  });
-  res.json({ success: true, settings });
+router.put('/settings', async (req, res, next) => {
+  try {
+    const project = await req.prisma.project.update({
+      where: { id: 'default' },
+      data: req.body
+    });
+    res.json({ success: true, settings: project });
+  } catch (error) { next(error); }
 });
 
-router.get('/progress', async (req, res) => {
-  const settings = await req.prisma.projectSettings.findUnique({ where: { id: 1 } });
-  const keywords = await req.prisma.keyword.count();
-  const pillars = await req.prisma.pillar.count();
-  const topics = await req.prisma.topic.count();
-  const articles = await req.prisma.article.count();
-  
-  res.json({
-    success: true,
-    progress: {
-      phase1: { keywords, tokensUsed: settings?.phase1TokensUsed || 0 },
-      phase2: { pillars, tokensUsed: settings?.phase2TokensUsed || 0 },
-      phase3: { topics, tokensUsed: settings?.phase3TokensUsed || 0 },
-      phase4: { articles, tokensUsed: settings?.phase4TokensUsed || 0 }
-    }
-  });
+router.get('/progress', async (req, res, next) => {
+  try {
+    const project = await req.prisma.project.findUnique({ where: { id: 'default' } });
+    const keywords = await req.prisma.keyword.count();
+    const pillars = await req.prisma.pillar.count();
+    const topics = await req.prisma.topic.count();
+    const articles = await req.prisma.article.count();
+    const competitors = await req.prisma.competitor.count();
+    const links = await req.prisma.link.count();
+    
+    res.json({
+      success: true,
+      project,
+      progress: {
+        phase1: { name: 'Keyword Discovery', count: keywords },
+        phase2: { name: 'Pillar Mapping', count: pillars },
+        phase3: { name: 'Topic Generation', count: topics },
+        phase4: { name: 'Article Generation', count: articles },
+        phase5: { name: 'Competitor Analysis', count: competitors },
+        phase6: { name: 'Interlinking Strategy', count: links }
+      },
+      totals: { keywords, pillars, topics, articles, competitors, links }
+    });
+  } catch (error) { next(error); }
 });
 
 export default router;
