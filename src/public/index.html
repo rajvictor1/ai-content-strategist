@@ -226,13 +226,14 @@
                 <h3>📝 Topic Generation</h3>
                 <p>Generate specific topics for each keyword (TOFU, MOFU, BOFU).</p>
                 <div class="info-box">ℹ️ Topics are automatically generated from keywords in phases 1-2.</div>
+                <div class="button-group" style="margin-bottom: 15px;">
+                    <button class="btn-primary" onclick="generateAllTopics()">Generate Topics <span id="topicGenLoading"></span></button>
+                    <button class="btn-secondary" onclick="fetchTopics()">View Topics <span id="topicLoading"></span></button>
+                </div>
                 <div class="form-group">
                     <label>Filter by Keyword ID (optional)</label>
                     <input type="text" id="topicKeywordId" placeholder="Leave empty to see all">
                 </div>
-                <button class="btn-primary" onclick="fetchTopics()">
-                    View Topics <span id="topicLoading"></span>
-                </button>
                 <div id="topicOutput" class="output-box" style="display:none;"></div>
             </div>
 
@@ -241,13 +242,14 @@
                 <h3>✍️ Article Generation</h3>
                 <p>Generate full articles from topics using AI.</p>
                 <div class="info-box">ℹ️ Topics are generated first, then articles from those topics.</div>
+                <div class="button-group" style="margin-bottom: 15px;">
+                    <button class="btn-primary" onclick="generateAllArticles()">Generate Articles <span id="articleGenLoading"></span></button>
+                    <button class="btn-secondary" onclick="fetchArticles()">View Articles <span id="articleLoading"></span></button>
+                </div>
                 <div class="form-group">
                     <label>Filter by Pillar ID (optional)</label>
                     <input type="text" id="articlePillarId" placeholder="Leave empty to see all">
                 </div>
-                <button class="btn-primary" onclick="fetchArticles()">
-                    View Articles <span id="articleLoading"></span>
-                </button>
                 <div id="articleOutput" class="output-box" style="display:none;"></div>
             </div>
 
@@ -392,7 +394,7 @@
                 if (!res.ok) throw new Error(data.error || 'Failed to fetch topics');
                 let html = `<strong>Topics (${(data.topics || []).length}):</strong><br><br>`;
                 if (!data.topics || data.topics.length === 0) {
-                    html += 'No topics found. Generate keywords and pillars first.';
+                    html += 'No topics found. Generate keywords and pillars first, then click Generate Topics.';
                 } else {
                     data.topics.forEach(topic => {
                         html += `<div class="result-item">
@@ -414,6 +416,45 @@
             document.getElementById('topicLoading').innerHTML = '';
         }
 
+        async function generateAllTopics() {
+            showLoading('topicGenLoading');
+            const output = document.getElementById('topicOutput');
+            try {
+                const keywordsRes = await fetch(`${API_BASE}/keywords`);
+                const keywordsData = await keywordsRes.json();
+                if (!keywordsRes.ok) throw new Error(keywordsData.error || 'Failed to fetch keywords');
+                const keywords = keywordsData.keywords || [];
+                if (keywords.length === 0) throw new Error('No keywords found. Run Phase 1 first.');
+
+                let created = 0;
+                let errors = 0;
+                for (const kw of keywords) {
+                    try {
+                        const res = await fetch(`${API_BASE}/topics/generate`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ keywordId: kw.id })
+                        });
+                        const data = await res.json();
+                        if (res.ok) created += data.topicsCreated || 0;
+                        else errors++;
+                    } catch (e) { errors++; }
+                }
+
+                output.innerHTML = `<strong>Generated ${created} topics (${errors} skipped/failed).</strong> Click View Topics to see them.`;
+                output.classList.remove('error');
+                output.classList.add('success');
+                output.style.display = 'block';
+                updateMetrics();
+                fetchTopics();
+            } catch (err) {
+                output.innerHTML = `<strong>Error:</strong> ${err.message}`;
+                output.classList.add('error');
+                output.style.display = 'block';
+            }
+            document.getElementById('topicGenLoading').innerHTML = '';
+        }
+
         async function fetchArticles() {
             showLoading('articleLoading');
             const output = document.getElementById('articleOutput');
@@ -426,7 +467,7 @@
                 if (!res.ok) throw new Error(data.error || 'Failed to fetch articles');
                 let html = `<strong>Articles (${(data.articles || []).length}):</strong><br><br>`;
                 if (!data.articles || data.articles.length === 0) {
-                    html += 'No articles found. Generate topics first.';
+                    html += 'No articles found. Generate topics first, then click Generate Articles.';
                 } else {
                     data.articles.forEach(article => {
                         html += `<div class="result-item">
@@ -450,6 +491,45 @@
             document.getElementById('articleLoading').innerHTML = '';
         }
 
+        async function generateAllArticles() {
+            showLoading('articleGenLoading');
+            const output = document.getElementById('articleOutput');
+            try {
+                const topicsRes = await fetch(`${API_BASE}/topics`);
+                const topicsData = await topicsRes.json();
+                if (!topicsRes.ok) throw new Error(topicsData.error || 'Failed to fetch topics');
+                const topics = topicsData.topics || [];
+                if (topics.length === 0) throw new Error('No topics found. Run Phase 3 first.');
+
+                let created = 0;
+                let errors = 0;
+                for (const topic of topics) {
+                    try {
+                        const res = await fetch(`${API_BASE}/articles/generate`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ topicId: topic.id })
+                        });
+                        const data = await res.json();
+                        if (res.ok) created++;
+                        else errors++;
+                    } catch (e) { errors++; }
+                }
+
+                output.innerHTML = `<strong>Generated ${created} articles (${errors} skipped/failed).</strong> Click View Articles to see them.`;
+                output.classList.remove('error');
+                output.classList.add('success');
+                output.style.display = 'block';
+                updateMetrics();
+                fetchArticles();
+            } catch (err) {
+                output.innerHTML = `<strong>Error:</strong> ${err.message}`;
+                output.classList.add('error');
+                output.style.display = 'block';
+            }
+            document.getElementById('articleGenLoading').innerHTML = '';
+        }
+
         async function analyzeCompetitors() {
             const articleId = document.getElementById('competitorArticleId').value.trim();
             const urls = document.getElementById('competitorUrls').value.trim();
@@ -457,7 +537,11 @@
             showLoading('competitorLoading');
             const output = document.getElementById('competitorOutput');
             try {
-                const competitors = urls.split(',').map(u => u.trim());
+                const competitors = urls.split(',').map(u => u.trim()).filter(Boolean).map((url, idx) => ({
+                    url,
+                    title: url.replace(/^https?:\/\//, '').split('/')[0],
+                    rank: idx + 1
+                }));
                 const res = await fetch(`${API_BASE}/competitors/analyze`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -465,8 +549,8 @@
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Failed to analyze competitors');
-                let html = `<strong>Analyzed ${(data.analyses || data.competitors || []).length} competitors:</strong><br><br>`;
-                (data.analyses || data.competitors || []).forEach(comp => {
+                let html = `<strong>Analyzed ${(data.competitors || []).length} competitors:</strong><br><br>`;
+                (data.competitors || []).forEach(comp => {
                     html += `<div class="result-item">
                         <h4>${comp.title || comp.url}</h4>
                         <p><strong>Rank:</strong> ${comp.rank} | <strong>Authority:</strong> ${comp.authority || 'N/A'}</p>

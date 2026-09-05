@@ -11,6 +11,10 @@ router.post('/generate', async (req, res, next) => {
     const topic = await req.prisma.topic.findUnique({ where: { id: topicId }, include: { keyword: true, pillar: true } });
     if (!topic) return res.status(404).json({ error: 'Topic not found' });
     
+    if (!topic.pillarId || !topic.pillar) {
+      return res.status(400).json({ error: 'Topic is not assigned to a pillar. Run pillar mapping first.' });
+    }
+
     const { content, wordCount, tokensUsed } = await generateArticleContent(req.claude, topic.title, topic.keyword.keyword, topic.pillar.title);
     
     const slug = topic.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');

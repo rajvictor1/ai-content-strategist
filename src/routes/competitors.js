@@ -17,14 +17,15 @@ router.post('/analyze', async (req, res, next) => {
     let totalTokens = 0;
     
     for (const comp of competitors) {
-      const { analysis, tokensUsed } = await analyzeCompetitor(req.claude, article.focusKeyword, comp.url, comp.title);
+      const title = comp.title || comp.url;
+      const { analysis, tokensUsed } = await analyzeCompetitor(req.claude, article.focusKeyword, comp.url, title);
       totalTokens += tokensUsed;
       
       const competitor = await req.prisma.competitor.create({
         data: {
           articleId,
           url: comp.url,
-          title: comp.title,
+          title,
           domain: new URL(comp.url).hostname,
           rank: comp.rank || 0,
           authority: analysis.authority || 0,
