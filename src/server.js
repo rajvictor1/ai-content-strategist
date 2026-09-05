@@ -61,28 +61,24 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 
-// On Vercel serverless, use an in-memory SQLite DB because the filesystem is read-only.
-// Local dev still uses the DATABASE_URL from .env (e.g., file:./dev.db).
-if (process.env.VERCEL === '1') {
-  process.env.DATABASE_URL = 'file:./dev.db?mode=memory';
+// On Vercel serverless, use a writable /tmp path for SQLite because the project root is read-only.
+if (process.env.VERCEL === '1' || !process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = 'file:/tmp/dev.db';
 }
 
 // Initialize database and start server
 const startServer = async () => {
   try {
+    // Run migrations first so the DB file and tables exist
+    console.log('Running migrations...');
+    const fs = await import('fs');
+    const sql = fs.readFileSync('./prisma/migrations/20260905000000_init/migration.sql', 'utf-8');
+    await prisma.$executeRawUnsafe(sql);
+    console.log('✓ Migrations applied');
+
     // Ensure database is initialized
     await prisma.$connect();
     console.log('✓ Database connected');
-
-    // Run migrations if not already applied (safe for in-memory on every cold start)
-    try {
-      await prisma.$executeRawUnsafe('SELECT 1');
-    } catch (e) {
-      console.log('Running initial migration...');
-      const fs = await import('fs');
-      const sql = fs.readFileSync('./prisma/migrations/20260905000000_init/migration.sql', 'utf-8');
-      await prisma.$executeRawUnsafe(sql);
-    }
 
     // Initialize project settings if needed
     const projectExists = await prisma.project.findUnique({
