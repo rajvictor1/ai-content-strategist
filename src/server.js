@@ -1,5 +1,7 @@
 import 'dotenv/config.js';
 import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { PrismaClient } from '@prisma/client';
 import Anthropic from '@anthropic-ai/sdk';
 import keywordRoutes from './routes/keywords.js';
@@ -9,6 +11,9 @@ import articleRoutes from './routes/articles.js';
 import competitorRoutes from './routes/competitors.js';
 import linkRoutes from './routes/links.js';
 import projectRoutes from './routes/project.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const prisma = new PrismaClient();
@@ -23,6 +28,11 @@ app.use((req, res, next) => {
   req.claude = claude;
   next();
 });
+
+// Dashboard at root and /dashboard
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 // Health check
 app.get('/health', (req, res) => {
