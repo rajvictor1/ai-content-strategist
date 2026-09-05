@@ -9,7 +9,8 @@
     "start": "node src/server.js",
     "seed": "node scripts/seed.js",
     "migrate": "prisma migrate dev",
-    "studio": "prisma studio"
+    "studio": "prisma studio",
+    "vercel-build": "prisma generate && prisma migrate deploy && node src/server.js"
   },
   "keywords": [
     "content-strategy",
