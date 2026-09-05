@@ -73,8 +73,11 @@ const startServer = async () => {
     console.log('Running migrations...');
     const fs = await import('fs');
     const sql = fs.readFileSync('./prisma/migrations/20260905000000_init/migration.sql', 'utf-8');
-    await prisma.$executeRawUnsafe(sql);
-    console.log('✓ Migrations applied');
+    const statements = sql.split(';').map(s => s.trim()).filter(s => s.length > 0);
+    for (const statement of statements) {
+      await prisma.$executeRawUnsafe(statement + ';');
+    }
+    console.log(`✓ Migrations applied (${statements.length} statements)`);
 
     // Ensure database is initialized
     await prisma.$connect();
