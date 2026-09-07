@@ -22,7 +22,7 @@ router.post('/generate', async (req, res, next) => {
             pillarId: keyword.pillarId,
             stage: stage.toUpperCase(),
             title: data.title || `${keyword.keyword} - ${stage.toUpperCase()}`,
-            outline: data.outline || JSON.stringify(data),
+            outline: typeof data.outline === 'string' ? data.outline : JSON.stringify(data.outline || data),
             metaDesc: data.metaDesc,
             tokens: tokensUsed / 3
           }
