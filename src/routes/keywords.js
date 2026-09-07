@@ -45,7 +45,16 @@ router.post('/organize-pillars', async (req, res, next) => {
     const { pillars, tokensUsed } = await createPillarStructure(req.claude, keywords, pillarCount);
     const savedPillars = [];
     for (const pillar of pillars) {
-      const saved = await req.prisma.pillar.create({ data: { title: pillar.name, description: pillar.description, authority: pillar.authority || 0 } });
+      const existing = await req.prisma.pillar.findUnique({ where: { title: pillar.name } });
+      let saved;
+      if (existing) {
+        saved = await req.prisma.pillar.update({
+          where: { id: existing.id },
+          data: { description: pillar.description, authority: pillar.authority || 0 }
+        });
+      } else {
+        saved = await req.prisma.pillar.create({ data: { title: pillar.name, description: pillar.description, authority: pillar.authority || 0 } });
+      }
       if (pillar.keywords && pillar.keywords.length > 0) {
         await req.prisma.keyword.updateMany({ where: { keyword: { in: pillar.keywords } }, data: { pillarId: saved.id } });
       }
