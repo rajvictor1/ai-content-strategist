@@ -9,7 +9,7 @@ router.post('/search', async (req, res, next) => {
     if (!topic) return res.status(400).json({ error: 'Topic required' });
     const { keywords, tokensUsed } = await discoverKeywords(req.claude, topic, count);
     const savedKeywords = await req.prisma.keyword.createMany({
-      data: keywords.map(k => ({ keyword: k.keyword, searchVolume: k.volume, difficulty: k.difficulty, intent: k.intent, description: k.description || '' }))
+      data: keywords.map(k => ({ keyword: k.keyword, searchVolume: k.volume, difficulty: k.difficulty, intent: k.intent }))
     });
     await req.prisma.project.update({ where: { id: 'default' }, data: { totalTokens: { increment: tokensUsed }, keywordsDiscovered: savedKeywords.count } });
     res.json({ success: true, keywordsCreated: savedKeywords.count, keywords, tokensUsed, estimatedCost: (tokensUsed * 0.003) / 1000 });
@@ -18,7 +18,7 @@ router.post('/search', async (req, res, next) => {
 
 router.get('/', async (req, res, next) => {
   try {
-    const keywords = await req.prisma.keyword.findMany({ include: { pillar: true }, orderBy: { createdAt: 'desc' } });
+    const keywords = await req.prisma.keyword.findMany({ include: { pillar: true }, orderBy: { discovered: 'desc' } });
     res.json({ success: true, count: keywords.length, keywords });
   } catch (error) { next(error); }
 });

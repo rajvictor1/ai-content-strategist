@@ -47,7 +47,7 @@ router.get('/', async (req, res, next) => {
     if (stage) where.stage = stage.toUpperCase();
     if (status) where.status = status;
     
-    const articles = await req.prisma.article.findMany({ where, include: { pillar: true, topic: true }, orderBy: { createdAt: 'desc' } });
+    const articles = await req.prisma.article.findMany({ where, include: { pillar: true, topic: true }, orderBy: { created: 'desc' } });
     res.json({ success: true, count: articles.length, articles });
   } catch (error) { next(error); }
 });
