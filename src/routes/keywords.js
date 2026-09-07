@@ -55,8 +55,9 @@ router.post('/organize-pillars', async (req, res, next) => {
       } else {
         saved = await req.prisma.pillar.create({ data: { title: pillar.name, description: pillar.description, authority: pillar.authority || 0 } });
       }
-      if (pillar.keywords && pillar.keywords.length > 0) {
-        await req.prisma.keyword.updateMany({ where: { keyword: { in: pillar.keywords } }, data: { pillarId: saved.id } });
+      const keywordIds = (pillar.keywordIds || pillar.keywords || []).filter(Boolean);
+      if (keywordIds.length > 0) {
+        await req.prisma.keyword.updateMany({ where: { id: { in: keywordIds } }, data: { pillarId: saved.id } });
       }
       savedPillars.push(saved);
     }

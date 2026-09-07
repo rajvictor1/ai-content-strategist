@@ -21,8 +21,8 @@ export async function discoverKeywords(client, topic, count = 25) {
 }
 
 export async function createPillarStructure(client, keywords, pillarCount = 11) {
-  const keywordList = keywords.map(k => k.keyword).join(', ');
-  const prompt = `Organize into ${pillarCount} pillars: ${keywordList}. Return JSON array with: name, description, authority (number 0-100), keywords.`;
+  const keywordList = keywords.map(k => ({ id: k.id, keyword: k.keyword }));
+  const prompt = `Organize these keywords into ${pillarCount} pillars. Return JSON array with: name, description, authority (number 0-100), keywordIds (array of keyword IDs from the input). Input keywords:\n${JSON.stringify(keywordList)}`;
   const response = await client.messages.create({
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 2000,
