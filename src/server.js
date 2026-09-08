@@ -48,6 +48,16 @@ app.use('/api/competitors', competitorRoutes);// Phase 5: Competitor Analysis
 app.use('/api/links', linkRoutes);            // Phase 6: Interlinking Strategy
 app.use('/api/project', projectRoutes);
 
+// Health check endpoint
+app.get('/health', async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: 'ok', timestamp: new Date().toISOString(), database: 'connected' });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
@@ -61,24 +71,11 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 
-// On Vercel serverless, use a writable /tmp path for SQLite because the project root is read-only.
-if (process.env.VERCEL === '1' || !process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = 'file:/tmp/dev.db';
-}
+// PostgreSQL is persistent on Vercel via DATABASE_URL; no need for /tmp fallback.
 
 // Initialize database and start server
 const startServer = async () => {
   try {
-    // Run migrations first so the DB file and tables exist
-    console.log('Running migrations...');
-    const fs = await import('fs');
-    const sql = fs.readFileSync('./prisma/migrations/20260905000000_init/migration.sql', 'utf-8');
-    const statements = sql.split(';').map(s => s.trim()).filter(s => s.length > 0);
-    for (const statement of statements) {
-      await prisma.$executeRawUnsafe(statement + ';');
-    }
-    console.log(`✓ Migrations applied (${statements.length} statements)`);
-
     // Ensure database is initialized
     await prisma.$connect();
     console.log('✓ Database connected');

@@ -10,7 +10,7 @@
     "seed": "node scripts/seed.js",
     "migrate": "prisma migrate dev",
     "studio": "prisma studio",
-    "vercel-build": "prisma generate"
+    "vercel-build": "prisma generate && prisma migrate deploy"
   },
   "keywords": [
     "content-strategy",

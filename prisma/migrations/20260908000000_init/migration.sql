@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE "Project" (
-    "id" TEXT NOT NULL PRIMARY KEY DEFAULT 'default',
+    "id" TEXT NOT NULL DEFAULT 'default',
     "name" TEXT NOT NULL DEFAULT 'AI Content Strategy',
     "description" TEXT,
     "status" TEXT NOT NULL DEFAULT 'active',
@@ -11,40 +11,45 @@ CREATE TABLE "Project" (
     "topicsGenerated" INTEGER NOT NULL DEFAULT 0,
     "articlesGenerated" INTEGER NOT NULL DEFAULT 0,
     "preferredTimeline" TEXT NOT NULL DEFAULT 'sequential',
-    "startDate" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "projectedEnd" DATETIME,
+    "startDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "projectedEnd" TIMESTAMP(3),
     "totalTokens" INTEGER NOT NULL DEFAULT 0,
-    "totalCost" REAL NOT NULL DEFAULT 0.0,
-    "updated" DATETIME NOT NULL
+    "totalCost" DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    "updated" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Project_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Keyword" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "keyword" TEXT NOT NULL,
     "searchVolume" INTEGER NOT NULL DEFAULT 0,
     "difficulty" INTEGER NOT NULL DEFAULT 0,
     "intent" TEXT NOT NULL DEFAULT 'Informational',
     "pillarId" TEXT,
     "source" TEXT NOT NULL DEFAULT 'claude_discovery',
-    "discovered" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated" DATETIME NOT NULL,
-    CONSTRAINT "Keyword_pillarId_fkey" FOREIGN KEY ("pillarId") REFERENCES "Pillar" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    "discovered" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Keyword_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Pillar" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "description" TEXT,
     "authority" INTEGER NOT NULL DEFAULT 0,
-    "created" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated" DATETIME NOT NULL
+    "created" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Pillar_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Topic" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "keywordId" TEXT NOT NULL,
     "pillarId" TEXT,
     "stage" TEXT NOT NULL DEFAULT 'TOFU',
@@ -54,15 +59,15 @@ CREATE TABLE "Topic" (
     "status" TEXT NOT NULL DEFAULT 'queued',
     "errorMsg" TEXT,
     "tokens" INTEGER NOT NULL DEFAULT 0,
-    "created" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated" DATETIME NOT NULL,
-    CONSTRAINT "Topic_keywordId_fkey" FOREIGN KEY ("keywordId") REFERENCES "Keyword" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT "Topic_pillarId_fkey" FOREIGN KEY ("pillarId") REFERENCES "Pillar" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    "created" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Topic_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Article" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "topicId" TEXT,
     "pillarId" TEXT NOT NULL,
     "title" TEXT NOT NULL,
@@ -77,16 +82,16 @@ CREATE TABLE "Article" (
     "errorMsg" TEXT,
     "tokens" INTEGER NOT NULL DEFAULT 0,
     "published" BOOLEAN NOT NULL DEFAULT false,
-    "publishedAt" DATETIME,
-    "created" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated" DATETIME NOT NULL,
-    CONSTRAINT "Article_topicId_fkey" FOREIGN KEY ("topicId") REFERENCES "Topic" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT "Article_pillarId_fkey" FOREIGN KEY ("pillarId") REFERENCES "Pillar" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    "publishedAt" TIMESTAMP(3),
+    "created" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Article_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Competitor" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "articleId" TEXT NOT NULL,
     "url" TEXT NOT NULL,
     "title" TEXT NOT NULL,
@@ -98,20 +103,21 @@ CREATE TABLE "Competitor" (
     "strengths" TEXT NOT NULL,
     "weaknesses" TEXT NOT NULL,
     "beats" TEXT NOT NULL,
-    "analyzed" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "Competitor_articleId_fkey" FOREIGN KEY ("articleId") REFERENCES "Article" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    "analyzed" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Competitor_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Link" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "sourceId" TEXT NOT NULL,
     "targetId" TEXT NOT NULL,
     "anchorText" TEXT NOT NULL DEFAULT 'Read more',
     "type" TEXT NOT NULL DEFAULT 'internal',
-    "created" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "Link_sourceId_fkey" FOREIGN KEY ("sourceId") REFERENCES "Article" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT "Link_targetId_fkey" FOREIGN KEY ("targetId") REFERENCES "Article" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    "created" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Link_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -149,4 +155,28 @@ CREATE INDEX "Link_targetId_idx" ON "Link"("targetId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Link_sourceId_targetId_key" ON "Link"("sourceId", "targetId");
+
+-- AddForeignKey
+ALTER TABLE "Keyword" ADD CONSTRAINT "Keyword_pillarId_fkey" FOREIGN KEY ("pillarId") REFERENCES "Pillar"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Topic" ADD CONSTRAINT "Topic_keywordId_fkey" FOREIGN KEY ("keywordId") REFERENCES "Keyword"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Topic" ADD CONSTRAINT "Topic_pillarId_fkey" FOREIGN KEY ("pillarId") REFERENCES "Pillar"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Article" ADD CONSTRAINT "Article_topicId_fkey" FOREIGN KEY ("topicId") REFERENCES "Topic"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Article" ADD CONSTRAINT "Article_pillarId_fkey" FOREIGN KEY ("pillarId") REFERENCES "Pillar"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Competitor" ADD CONSTRAINT "Competitor_articleId_fkey" FOREIGN KEY ("articleId") REFERENCES "Article"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Link" ADD CONSTRAINT "Link_sourceId_fkey" FOREIGN KEY ("sourceId") REFERENCES "Article"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Link" ADD CONSTRAINT "Link_targetId_fkey" FOREIGN KEY ("targetId") REFERENCES "Article"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
