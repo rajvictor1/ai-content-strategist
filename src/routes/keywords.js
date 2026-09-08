@@ -8,11 +8,22 @@ router.post('/search', async (req, res, next) => {
     const { topic, count = 25 } = req.body;
     if (!topic) return res.status(400).json({ error: 'Topic required' });
     const { keywords, tokensUsed } = await discoverKeywords(req.claude, topic, count);
+    // Deduplicate by keyword string before saving (case-insensitive)
+    const seen = new Set();
+    const uniqueKeywords = [];
+    for (const k of keywords) {
+      const normalized = k.keyword.toLowerCase().trim();
+      if (!seen.has(normalized)) {
+        seen.add(normalized);
+        uniqueKeywords.push(k);
+      }
+    }
     const savedKeywords = await req.prisma.keyword.createMany({
-      data: keywords.map(k => ({ keyword: k.keyword, searchVolume: k.volume, difficulty: k.difficulty, intent: k.intent }))
+      data: uniqueKeywords.map(k => ({ keyword: k.keyword, searchVolume: k.volume, difficulty: k.difficulty, intent: k.intent })),
+      skipDuplicates: true
     });
     await req.prisma.project.update({ where: { id: 'default' }, data: { totalTokens: { increment: tokensUsed }, keywordsDiscovered: savedKeywords.count } });
-    res.json({ success: true, keywordsCreated: savedKeywords.count, keywords, tokensUsed, estimatedCost: (tokensUsed * 0.003) / 1000 });
+    res.json({ success: true, keywordsCreated: savedKeywords.count, keywords: uniqueKeywords, tokensUsed, estimatedCost: (tokensUsed * 0.003) / 1000 });
   } catch (error) { next(error); }
 });
 
